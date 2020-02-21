@@ -37,6 +37,8 @@ func runQuery(project string, instance string, tableName string, query string) {
 	if err != nil {
 		log.Fatalf("bigtable.NewClient: %v", err)
 	}
+	defer client.Close()
+
 	table := client.Open(tableName)
 
 	switch query {
@@ -59,8 +61,33 @@ func runQuery(project string, instance string, tableName string, query string) {
 	}
 }
 
+func printLatLongPairs(row bigtable.Row) {
+	for _, cols := range row {
+		if len(cols)%2 != 0 {
+			log.Fatalf("Incorrect number of lat/long pairs in row.")
+		}
+
+		span := len(cols) / 2
+		for i := 0; i < span; i++ {
+			fmt.Printf("%s, %s\n", cols[i].Value, cols[i+span].Value)
+		}
+
+	}
+}
+
 func lookupVehicleInGivenHour(table *bigtable.Table) {
-	fmt.Println("Table: %v", table)
+	rowKey := "MTA/M86-SBS/1496275200000/NYCT_5824"
+	ctx := context.Background()
+
+	row, err := table.ReadRow(ctx, rowKey, bigtable.RowFilter(bigtable.ColumnFilter("VehicleLocation.*")))
+
+	if err != nil {
+		log.Fatalf("Could not read row with key %s: %v", rowKey, err)
+	}
+
+	fmt.Println("Lookup a specific vehicle on the M86 route on June 1, 2017 from 12:00am to 1:00am:")
+	printLatLongPairs(row)
+
 }
 
 func scanBusLineInGivenHour(table *bigtable.Table) {
