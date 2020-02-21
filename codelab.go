@@ -47,12 +47,12 @@ func runQuery(project string, instance string, tableName string, query string) {
 		scanBusLineInGivenHour(table)
 	case "scanEntireBusLine":
 		scanEntireBusLine(table)
+	case "scanManhattanBusesInGivenHour":
+		scanManhattanBusesInGivenHour(table)
 	case "filterBusesGoingEast":
 		filterBusesGoingEast(table)
 	case "filterBusesGoingWest":
 		filterBusesGoingWest(table)
-	case "scanManhattanBusesInGivenHour":
-		scanManhattanBusesInGivenHour(table)
 	default:
 		fmt.Println("Please provide one of the following queries: lookupVehicleInGivenHour, " +
 			"scanBusLineInGivenHour, scanEntireBusLine, filterBusesGoingEast, " +
@@ -129,15 +129,15 @@ func scanEntireBusLine(table *bigtable.Table) {
 	}
 }
 
+func scanManhattanBusesInGivenHour(table *bigtable.Table) {
+	fmt.Println("Table: %v", table)
+}
+
 func filterBusesGoingEast(table *bigtable.Table) {
 	fmt.Println("Table: %v", table)
 }
 
 func filterBusesGoingWest(table *bigtable.Table) {
-	fmt.Println("Table: %v", table)
-}
-
-func scanManhattanBusesInGivenHour(table *bigtable.Table) {
 	fmt.Println("Table: %v", table)
 }
 
