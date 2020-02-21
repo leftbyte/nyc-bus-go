@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strings"
 
 	"cloud.google.com/go/bigtable"
 )
@@ -25,9 +26,8 @@ import (
 
 // User-provided constants.
 const (
-	columnFamilyName  = "cf"
-	locationFilter    = "VehicleLocation.*"
-	manhattanBusLines = "M1,M2,M3,M4,M5,M7,M8,M9,M10,M11,M12,M15,M20,M21,M22,M31,M35,M42,M50,M55,M57,M66,M72,M96,M98,M100,M101,M102,M103,M104,M106,M116,M14A,M34A-SBS,M14D,M15-SBS,M23-SBS,M34-SBS,M60-SBS,M79-SBS,M86-SBS"
+	columnFamilyName = "cf"
+	locationFilter   = "VehicleLocation.*"
 )
 
 func runQuery(project string, instance string, tableName string, query string) {
@@ -130,7 +130,28 @@ func scanEntireBusLine(table *bigtable.Table) {
 }
 
 func scanManhattanBusesInGivenHour(table *bigtable.Table) {
-	fmt.Println("Table: %v", table)
+	ctx := context.Background()
+
+	manhattanBusLines := "M1,M2,M3,M4,M5,M7,M8,M9,M10,M11,M12,M15,M20,M21,M22,M31,M35,M42,M50,M55,M57,M66,M72,M96,M98,M100,M101,M102,M103,M104,M106,M116,M14A,M34A-SBS,M14D,M15-SBS,M23-SBS,M34-SBS,M60-SBS,M79-SBS,M86-SBS"
+
+	// Marshall the set of row ranges
+	var rrl bigtable.RowRangeList
+	for _, b := range strings.Split(manhattanBusLines, ",") {
+		start := "MTA/" + b + "/1496275200000"
+		end := "MTA/" + b + "/1496275200001"
+		rrl = append(rrl, bigtable.NewRange(start, end))
+	}
+
+	fmt.Println("Scan for all buses on June 1, 2017 from 12:00am to 1:00am:")
+	err := table.ReadRows(ctx, rrl,
+		func(row bigtable.Row) bool {
+			printLatLongPairs(row)
+			return true
+		}, bigtable.RowFilter(bigtable.ColumnFilter(locationFilter)))
+
+	if err != nil {
+		log.Fatalf("Could not read row ranges %v: %v", rrl, err)
+	}
 }
 
 func filterBusesGoingEast(table *bigtable.Table) {
