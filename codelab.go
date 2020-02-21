@@ -106,7 +106,27 @@ func scanBusLineInGivenHour(table *bigtable.Table) {
 }
 
 func scanEntireBusLine(table *bigtable.Table) {
-	fmt.Println("Table: %v", table)
+	rowKey := "MTA/M86-SBS"
+	ctx := context.Background()
+
+	var opts []bigtable.ReadOption
+	var filters []bigtable.Filter
+
+	// Get only the last version (one month of data)
+	filters = append(filters, bigtable.ColumnFilter(locationFilter))
+	filters = append(filters, bigtable.LatestNFilter(1))
+	opts = append(opts, bigtable.RowFilter(bigtable.ChainFilters(filters...)))
+
+	fmt.Println("Scan for all m86 during the month:")
+	err := table.ReadRows(ctx, bigtable.PrefixRange(rowKey),
+		func(row bigtable.Row) bool {
+			printLatLongPairs(row)
+			return true
+		}, opts...)
+
+	if err != nil {
+		log.Fatalf("Could not read row with key %s: %v", rowKey, err)
+	}
 }
 
 func filterBusesGoingEast(table *bigtable.Table) {
