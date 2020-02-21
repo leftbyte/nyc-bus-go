@@ -26,8 +26,7 @@ import (
 // User-provided constants.
 const (
 	columnFamilyName  = "cf"
-	latColumnName     = "VehicleLocation.Latitude"
-	longColumnName    = "VehicleLocation.Longitude"
+	locationFilter    = "VehicleLocation.*"
 	manhattanBusLines = "M1,M2,M3,M4,M5,M7,M8,M9,M10,M11,M12,M15,M20,M21,M22,M31,M35,M42,M50,M55,M57,M66,M72,M96,M98,M100,M101,M102,M103,M104,M106,M116,M14A,M34A-SBS,M14D,M15-SBS,M23-SBS,M34-SBS,M60-SBS,M79-SBS,M86-SBS"
 )
 
@@ -79,7 +78,7 @@ func lookupVehicleInGivenHour(table *bigtable.Table) {
 	rowKey := "MTA/M86-SBS/1496275200000/NYCT_5824"
 	ctx := context.Background()
 
-	row, err := table.ReadRow(ctx, rowKey, bigtable.RowFilter(bigtable.ColumnFilter("VehicleLocation.*")))
+	row, err := table.ReadRow(ctx, rowKey, bigtable.RowFilter(bigtable.ColumnFilter(locationFilter)))
 
 	if err != nil {
 		log.Fatalf("Could not read row with key %s: %v", rowKey, err)
