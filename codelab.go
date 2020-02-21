@@ -90,7 +90,19 @@ func lookupVehicleInGivenHour(table *bigtable.Table) {
 }
 
 func scanBusLineInGivenHour(table *bigtable.Table) {
-	fmt.Println("Table: %v", table)
+	rowKey := "MTA/M86-SBS/1496275200000"
+	ctx := context.Background()
+
+	fmt.Println("Scan for all M86 buses on June 1, 2017 from 12:00am to 1:00am:")
+	err := table.ReadRows(ctx, bigtable.PrefixRange(rowKey),
+		func(row bigtable.Row) bool {
+			printLatLongPairs(row)
+			return true
+		}, bigtable.RowFilter(bigtable.ColumnFilter(locationFilter)))
+
+	if err != nil {
+		log.Fatalf("Could not read row with key %s: %v", rowKey, err)
+	}
 }
 
 func scanEntireBusLine(table *bigtable.Table) {
