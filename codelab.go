@@ -78,7 +78,8 @@ func lookupVehicleInGivenHour(table *bigtable.Table) {
 	rowKey := "MTA/M86-SBS/1496275200000/NYCT_5824"
 	ctx := context.Background()
 
-	row, err := table.ReadRow(ctx, rowKey, bigtable.RowFilter(bigtable.ColumnFilter(colFiltName)))
+	chain := bigtable.ChainFilters(bigtable.FamilyFilter(columnFamilyName), bigtable.ColumnFilter(colFiltName))
+	row, err := table.ReadRow(ctx, rowKey, bigtable.RowFilter(chain))
 
 	if err != nil {
 		log.Fatalf("Could not read row with key %s: %v", rowKey, err)
@@ -94,11 +95,12 @@ func scanBusLineInGivenHour(table *bigtable.Table) {
 	ctx := context.Background()
 
 	fmt.Println("Scan for all M86 buses on June 1, 2017 from 12:00am to 1:00am:")
+	chain := bigtable.ChainFilters(bigtable.FamilyFilter(columnFamilyName), bigtable.ColumnFilter(colFiltName))
 	err := table.ReadRows(ctx, bigtable.PrefixRange(rowKey),
 		func(row bigtable.Row) bool {
 			printLatLongPairs(row)
 			return true
-		}, bigtable.RowFilter(bigtable.ColumnFilter(colFiltName)))
+		}, bigtable.RowFilter(chain))
 
 	if err != nil {
 		log.Fatalf("Could not read row with key %s: %v", rowKey, err)
@@ -113,6 +115,7 @@ func scanEntireBusLine(table *bigtable.Table) {
 	var filters []bigtable.Filter
 
 	// Get only the last version (one month of data)
+	filters = append(filters, bigtable.FamilyFilter(columnFamilyName))
 	filters = append(filters, bigtable.ColumnFilter(colFiltName))
 	filters = append(filters, bigtable.LatestNFilter(1))
 	opts = append(opts, bigtable.RowFilter(bigtable.ChainFilters(filters...)))
@@ -143,11 +146,12 @@ func scanManhattanBusesInGivenHour(table *bigtable.Table) {
 	}
 
 	fmt.Println("Scan for all buses on June 1, 2017 from 12:00am to 1:00am:")
+	chain := bigtable.ChainFilters(bigtable.FamilyFilter(columnFamilyName), bigtable.ColumnFilter(colFiltName))
 	err := table.ReadRows(ctx, rrl,
 		func(row bigtable.Row) bool {
 			printLatLongPairs(row)
 			return true
-		}, bigtable.RowFilter(bigtable.ColumnFilter(colFiltName)))
+		}, bigtable.RowFilter(chain))
 
 	if err != nil {
 		log.Fatalf("Could not read row ranges %v: %v", rrl, err)
