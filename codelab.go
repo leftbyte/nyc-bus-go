@@ -27,7 +27,7 @@ import (
 // User-provided constants.
 const (
 	columnFamilyName = "cf"
-	locationFilter   = "VehicleLocation.*"
+	colFiltName      = "VehicleLocation.*"
 )
 
 func runQuery(project string, instance string, tableName string, query string) {
@@ -78,7 +78,7 @@ func lookupVehicleInGivenHour(table *bigtable.Table) {
 	rowKey := "MTA/M86-SBS/1496275200000/NYCT_5824"
 	ctx := context.Background()
 
-	row, err := table.ReadRow(ctx, rowKey, bigtable.RowFilter(bigtable.ColumnFilter(locationFilter)))
+	row, err := table.ReadRow(ctx, rowKey, bigtable.RowFilter(bigtable.ColumnFilter(colFiltName)))
 
 	if err != nil {
 		log.Fatalf("Could not read row with key %s: %v", rowKey, err)
@@ -98,7 +98,7 @@ func scanBusLineInGivenHour(table *bigtable.Table) {
 		func(row bigtable.Row) bool {
 			printLatLongPairs(row)
 			return true
-		}, bigtable.RowFilter(bigtable.ColumnFilter(locationFilter)))
+		}, bigtable.RowFilter(bigtable.ColumnFilter(colFiltName)))
 
 	if err != nil {
 		log.Fatalf("Could not read row with key %s: %v", rowKey, err)
@@ -113,7 +113,7 @@ func scanEntireBusLine(table *bigtable.Table) {
 	var filters []bigtable.Filter
 
 	// Get only the last version (one month of data)
-	filters = append(filters, bigtable.ColumnFilter(locationFilter))
+	filters = append(filters, bigtable.ColumnFilter(colFiltName))
 	filters = append(filters, bigtable.LatestNFilter(1))
 	opts = append(opts, bigtable.RowFilter(bigtable.ChainFilters(filters...)))
 
@@ -147,7 +147,7 @@ func scanManhattanBusesInGivenHour(table *bigtable.Table) {
 		func(row bigtable.Row) bool {
 			printLatLongPairs(row)
 			return true
-		}, bigtable.RowFilter(bigtable.ColumnFilter(locationFilter)))
+		}, bigtable.RowFilter(bigtable.ColumnFilter(colFiltName)))
 
 	if err != nil {
 		log.Fatalf("Could not read row ranges %v: %v", rrl, err)
