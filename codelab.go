@@ -6,6 +6,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"strings"
 
@@ -72,6 +73,18 @@ func printLatLongPairs(row bigtable.Row) {
 		}
 
 	}
+}
+
+func printRow(w io.Writer, row bigtable.Row) {
+	fmt.Fprintf(w, "Reading data for %s:\n", row.Key())
+	for columnFamily, cols := range row {
+		fmt.Fprintf(w, "Column Family %s\n", columnFamily)
+		for _, col := range cols {
+			qualifier := col.Column[strings.IndexByte(col.Column, ':')+1:]
+			fmt.Fprintf(w, "\t%s: %s @%d\n", qualifier, col.Value, col.Timestamp)
+		}
+	}
+	fmt.Fprintln(w)
 }
 
 func lookupVehicleInGivenHour(table *bigtable.Table) {
@@ -159,7 +172,32 @@ func scanManhattanBusesInGivenHour(table *bigtable.Table) {
 }
 
 func filterBusesGoingEast(table *bigtable.Table) {
-	fmt.Println("Table: %v", table)
+
+	rowKey := "MTA/M86-SBS/"
+	ctx := context.Background()
+
+	trueFilter := bigtable.ChainFilters(
+		bigtable.LatestNFilter(1),
+		bigtable.FamilyFilter(columnFamilyName),
+		bigtable.ColumnFilter(colFiltName))
+
+	pred := bigtable.ChainFilters(bigtable.LatestNFilter(1),
+		bigtable.FamilyFilter(columnFamilyName),
+		bigtable.ColumnFilter("DestinationName"),
+		bigtable.ValueFilter("(Select Bus Service Yorkville East End AV)"))
+
+	filter := bigtable.RowFilter(bigtable.ConditionFilter(pred, trueFilter, nil))
+
+	fmt.Println("Scan for all M86-SBS buses heading East during the month:")
+	err := table.ReadRows(ctx, bigtable.PrefixRange(rowKey),
+		func(row bigtable.Row) bool {
+			printLatLongPairs(row)
+			return true
+		}, filter)
+
+	if err != nil {
+		log.Fatalf("Could not read row with key %s: %v", rowKey, err)
+	}
 }
 
 func filterBusesGoingWest(table *bigtable.Table) {
