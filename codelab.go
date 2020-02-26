@@ -51,9 +51,9 @@ func runQuery(project string, instance string, tableName string, query string) {
 	case "scanManhattanBusesInGivenHour":
 		scanManhattanBusesInGivenHour(table)
 	case "filterBusesGoingEast":
-		filterBusesGoingEast(table)
+		filterBusesGoing(table, "East")
 	case "filterBusesGoingWest":
-		filterBusesGoingWest(table)
+		filterBusesGoing(table, "West")
 	default:
 		fmt.Println("Please provide one of the following queries: lookupVehicleInGivenHour, " +
 			"scanBusLineInGivenHour, scanEntireBusLine, filterBusesGoingEast, " +
@@ -171,7 +171,7 @@ func scanManhattanBusesInGivenHour(table *bigtable.Table) {
 	}
 }
 
-func filterBusesGoingEast(table *bigtable.Table) {
+func filterBusesGoing(table *bigtable.Table, dir string) {
 
 	rowKey := "MTA/M86-SBS/"
 	ctx := context.Background()
@@ -181,14 +181,16 @@ func filterBusesGoingEast(table *bigtable.Table) {
 		bigtable.FamilyFilter(columnFamilyName),
 		bigtable.ColumnFilter(colFiltName))
 
+	valueMatch := fmt.Sprintf("(Select Bus Service .* %s End AV)", dir)
+
 	pred := bigtable.ChainFilters(bigtable.LatestNFilter(1),
 		bigtable.FamilyFilter(columnFamilyName),
 		bigtable.ColumnFilter("DestinationName"),
-		bigtable.ValueFilter("(Select Bus Service Yorkville East End AV)"))
+		bigtable.ValueFilter(valueMatch))
 
 	filter := bigtable.RowFilter(bigtable.ConditionFilter(pred, trueFilter, nil))
 
-	fmt.Println("Scan for all M86-SBS buses heading East during the month:")
+	fmt.Printf("Scan for all M86-SBS buses heading %s during the month:\n", dir)
 	err := table.ReadRows(ctx, bigtable.PrefixRange(rowKey),
 		func(row bigtable.Row) bool {
 			printLatLongPairs(row)
@@ -198,10 +200,6 @@ func filterBusesGoingEast(table *bigtable.Table) {
 	if err != nil {
 		log.Fatalf("Could not read row with key %s: %v", rowKey, err)
 	}
-}
-
-func filterBusesGoingWest(table *bigtable.Table) {
-	fmt.Println("Table: %v", table)
 }
 
 func main() {
