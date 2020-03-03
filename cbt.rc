@@ -1,0 +1,6 @@
+export INSTANCE_ID="nyc-bus-instance"
+export CLUSTER_ID="nyc-bus-cluster"
+export TABLE_ID="nyc-bus-data"
+export CLUSTER_NUM_NODES=3
+export CLUSTER_ZONE="us-central1-c"
+export GOOGLE_CLOUD_PROJECT="YOUR GCP PROJECT NAME"
